@@ -22,6 +22,7 @@ def getImageSize(imageName):
 
 def buildImagesField(imageID, imageName, width, height):
     image = {}
+
     image["id"] = imageID
     image["file_name"] = imageName
     image["width"] = width
@@ -29,11 +30,26 @@ def buildImagesField(imageID, imageName, width, height):
 
     return image
 
+def buildCategoriesField(categoryName, categoryID):
+    category = {}
+
+    category["supercategory"] = 'Mango'
+    category["id"] = categoryID
+    category["name"] = categoryName
+
+    return category
+
 def main():
+    categories_label = {"Bad color": 1, "Anthrax": 2, "Absorption": 3, "Machine damage": 4, "Black spot": 5}
     file = pds.read_csv("modified_" + targetFile + ".csv", encoding = "iso-8859-1")
     images = []
     categories = []
     annotations = []
+
+    # 把categories_label定義的label寫進dataset的categories欄位
+    for name in categories_label:
+        categories.append(buildCategoriesField(name, categories_label[name]))
+
     for i in range(file.shape[0]):
         # 取得該筆資料有多少個column，後面用來對應特徵欄位
         temp = file.iloc[i].isnull()
@@ -45,8 +61,11 @@ def main():
         imageID = file.loc[i, 'FileID']
         width, height = getImageSize(imageName)
 
-        # Next step: 填寫dataset的images欄位
-        print(buildImagesField(imageID, imageName, width, height))
+        # 填寫dataset的images欄位
+        images.append(buildImagesField(imageID, imageName, width, height))
+
+        
+
 
 if __name__ == '__main__':
     targetFile = "Dev"
