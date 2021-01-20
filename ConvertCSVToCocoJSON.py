@@ -1,24 +1,5 @@
 import pandas as pds
 import numpy as np
-from PIL import Image
-
-def findNan(row, len):
-    # 因為每筆資料擁有的缺陷數量不一
-    # 因此要找出每列資料沒有值的位置
-    column = 0
-    for i in range(len):
-        if row[i]:
-            column = i
-            break
-
-    return column
-
-def getImageSize(imageName):
-    # 因為csv檔沒有給每張圖的大小，需要自己抓出圖片的size
-    im = Image.open(targetFile + "/" + imageName)
-    width, height = im.size
-
-    return width, height
 
 def buildImagesField(imageID, imageName, width, height):
     image = {}
@@ -39,7 +20,28 @@ def buildCategoriesField(categoryName, categoryID):
 
     return category
 
+def buildAnnotationField(row, maxColumn):
+    annotations = []
+    annotation = {}
+
+    # 第一個欄位是圖片ID
+    annotation["image_id"] = row[0]
+
+    for i in range(2, maxColumn):
+        print(str(i) + ": " + str(row[i]))
+        annotations.append(row[i])
+    # annotation["segmentation"] = []
+    # annotation["iscrowd"] = 0
+    # annotation["area"] = area
+    #
+    # annotation["bbox"] = [row.xmin, row.ymin, row.xmax -row.xmin,row.ymax-row.ymin ]
+    #
+    # annotation["category_id"] = row.categoryid
+    # annotation["id"] = row.annid
+    return annotation
+
 def main():
+    # label 1: 著色不佳、 2: 炭疽病、 3: 乳汁吸附、 4: 機械傷害、 5: 黑斑病
     categories_label = {"Bad color": 1, "Anthrax": 2, "Absorption": 3, "Machine damage": 4, "Black spot": 5}
     file = pds.read_csv("modified_" + targetFile + ".csv", encoding = "iso-8859-1")
     images = []
@@ -51,21 +53,29 @@ def main():
         categories.append(buildCategoriesField(name, categories_label[name]))
 
     for i in range(file.shape[0]):
-        # 取得該筆資料有多少個column，後面用來對應特徵欄位
-        temp = file.iloc[i].isnull()
-        maxColumn = findNan(temp, file.shape[1])
         # print("file name:" + file.iloc[i, 0] + ", file[" + str(i) + ", " + str(maxColmun) + "] is nan")
 
-        # 取得檔案名稱、檔案ID、圖片大小
-        imageName = file.loc[i, 'Filename']
-        imageID = file.loc[i, 'FileID']
-        width, height = getImageSize(imageName)
+        # # 取得檔案名稱、檔案ID、圖片大小
+        # imageName = file.loc[i, 'Filename']
+        # imageID = file.loc[i, 'FileID']
+        # width, height = getImageSize(imageName)
+        #
+        # # 填寫dataset的images欄位
+        # images.append(buildImagesField(imageID, imageName, width, height))
 
-        # 填寫dataset的images欄位
-        images.append(buildImagesField(imageID, imageName, width, height))
+        temp = file.iloc[i]
+        # buildAnnotationField(temp, maxColumn, len(annotations))
+        testAll = []
+        for k in range(3):
+            testTemp = []
+            for j in range(10):
+                testTemp.append(j)
+            testAll.append(testTemp)
+        annotations.append(testAll)
 
-        
-
+        if i > 1:
+            break
+    print(annotations)
 
 if __name__ == '__main__':
     targetFile = "Dev"
