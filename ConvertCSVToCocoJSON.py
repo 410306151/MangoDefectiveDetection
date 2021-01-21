@@ -1,82 +1,67 @@
 import pandas as pds
-import numpy as np
+import json
 
-def buildImagesField(imageID, imageName, width, height):
+def buildImagesField(row):
     image = {}
 
-    image["id"] = imageID
-    image["file_name"] = imageName
-    image["width"] = width
-    image["height"] = height
+    image["id"] = row.image_id
+    image["file_name"] = row.file_name
+    image["width"] = row.image_width
+    image["height"] = row.image_height
 
     return image
 
-def buildCategoriesField(categoryName, categoryID):
+def buildCategoriesField(row):
     category = {}
 
     category["supercategory"] = 'Mango'
-    category["id"] = categoryID
-    category["name"] = categoryName
+    category["id"] = row.category_id
+    category["name"] = row.category_label
 
     return category
 
-def buildAnnotationField(row, maxColumn):
-    annotations = []
+def buildAnnotationField(row):
     annotation = {}
 
-    # 第一個欄位是圖片ID
-    annotation["image_id"] = row[0]
+    area = row.bbox_width * row.bbox_height
+    annotation["segmentation"] = []
+    annotation["iscrowd"] = 0
+    annotation["area"] = area
+    annotation["image_id"] = row.image_id
+    annotation["bbox"] = [row.bbox_X, row.bbox_Y, row.bbox_width, row.bbox_height]
 
-    for i in range(2, maxColumn):
-        print(str(i) + ": " + str(row[i]))
-        annotations.append(row[i])
-    # annotation["segmentation"] = []
-    # annotation["iscrowd"] = 0
-    # annotation["area"] = area
-    #
-    # annotation["bbox"] = [row.xmin, row.ymin, row.xmax -row.xmin,row.ymax-row.ymin ]
-    #
-    # annotation["category_id"] = row.categoryid
-    # annotation["id"] = row.annid
+    annotation["category_id"] = row.category_id
+    annotation["id"] = row.annotation_id
+
     return annotation
 
 def main():
-    # label 1: 著色不佳、 2: 炭疽病、 3: 乳汁吸附、 4: 機械傷害、 5: 黑斑病
-    categories_label = {"Bad color": 1, "Anthrax": 2, "Absorption": 3, "Machine damage": 4, "Black spot": 5}
-    file = pds.read_csv("modified_" + targetFile + ".csv", encoding = "iso-8859-1")
+    file = pds.read_csv("output_" + targetFile + ".csv")
+    data_coco = {}
     images = []
     categories = []
     annotations = []
 
-    # 把categories_label定義的label寫進dataset的categories欄位
-    for name in categories_label:
-        categories.append(buildCategoriesField(name, categories_label[name]))
+    # 寫入images欄位
+    image = file.drop_duplicates(subset=['image_id']).sort_values(by='image_id')
+    for row in image.itertuples():
+        images.append(buildImagesField(row))
 
-    for i in range(file.shape[0]):
-        # print("file name:" + file.iloc[i, 0] + ", file[" + str(i) + ", " + str(maxColmun) + "] is nan")
+    # 寫入categories欄位
+    category = file.drop_duplicates(subset=['category_id']).sort_values(by='category_id')
+    for row in category.itertuples():
+        categories.append(buildCategoriesField(row))
 
-        # # 取得檔案名稱、檔案ID、圖片大小
-        # imageName = file.loc[i, 'Filename']
-        # imageID = file.loc[i, 'FileID']
-        # width, height = getImageSize(imageName)
-        #
-        # # 填寫dataset的images欄位
-        # images.append(buildImagesField(imageID, imageName, width, height))
+    # 寫入annotations欄位
+    for row in file.itertuples():
+        annotations.append(buildAnnotationField(row))
 
-        temp = file.iloc[i]
-        # buildAnnotationField(temp, maxColumn, len(annotations))
-        testAll = []
-        for k in range(3):
-            testTemp = []
-            for j in range(10):
-                testTemp.append(j)
-            testAll.append(testTemp)
-        annotations.append(testAll)
+    data_coco["images"] = images
+    data_coco["categories"] = categories
+    data_coco["annotations"] = annotations
 
-        if i > 1:
-            break
-    print(annotations)
+    json.dump(data_coco, open("test.json", "w"), indent=4)
 
 if __name__ == '__main__':
-    targetFile = "Dev"
+    targetFile = "Train(500)"
     main()

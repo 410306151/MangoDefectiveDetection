@@ -21,10 +21,10 @@ def getImageSize(imageName):
 
     return width, height
 
-targetFile = "Dev"
-file = pds.read_csv("modified_" + targetFile + ".csv", encoding="iso-8859-1")
+targetFile = "Train"
+file = pds.read_csv("modified_" + targetFile + ".csv", dtype = {"file_id": int, "file_name": str})
 
-columnNames = ["image_id", "file_name", "image_width", "image_height", "category_id", "category_label", "bbox"]
+columnNames = ["image_id", "file_name", "image_width", "image_height", "category_id", "category_label", "bbox_X", "bbox_Y", "bbox_width", "bbox_height"]
 
 # label 1: 著色不佳、 2: 炭疽病、 3: 乳汁吸附、 4: 機械傷害、 5: 黑斑病
 categories_label = ["Bad color", "Anthrax", "Absorption", "Machine damage", "Black spot"]
@@ -47,8 +47,6 @@ for i in range(file.shape[0]):
     # 取得該筆資料有多少個column，後面用來對應特徵欄位
     temp = file.iloc[i].isnull()
     maxColumn = findNan(temp, file.shape[1])
-    # print(file.shape[1])
-    # print("file name: " + imageName + ", max: " + str(maxColumn))
     # 開始做缺陷資料擷取
     row = file.iloc[i]
     for j in range(2, maxColumn):
@@ -76,7 +74,10 @@ for i in range(file.shape[0]):
             elif row[j] == "defective5":
                 rowContent["category_id"] = 5
                 rowContent["category_label"] = categories_label[4]
-            rowContent["bbox"] = [bboxX, bboxY, bboxWidth, bboxHeight]
+            rowContent["bbox_X"] = bboxX
+            rowContent["bbox_Y"] = bboxY
+            rowContent["bbox_width"] = bboxWidth
+            rowContent["bbox_height"] = bboxHeight
             imageDF = imageDF.append(rowContent, ignore_index = True)
 
 imageDF.to_csv("output_" + targetFile + ".csv")
